@@ -8,12 +8,23 @@ import (
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
+	// Use the Header().Add() method to add a 'Server: Go' header to the
+	// response header map. The first parameter is the header name, and
+	// the second parameter is the header value.
+	w.Header().Add("Server", "Go")
+
 	w.Write([]byte("Hello from Snippetbox"))
 }
 
 // Add a snippetView handler function.
 func snippetView(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Display a specific snippet..."))
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil || id < 1 {
+		http.NotFound(w, r)
+		return
+	}
+
+	fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
 }
 
 // Add a snippetCreate handler function.
@@ -27,6 +38,9 @@ func snippetCreate(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+
+	// Use the w.WriteHeader() method to send a 201 status code.
+	w.WriteHeader(http.StatusCreated)
 
 	// Use the fmt.Sprintf() function to interpolate the id value with a
 	// message, then write it as the HTTP response.
