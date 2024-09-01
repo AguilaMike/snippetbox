@@ -3,12 +3,11 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"strconv"
 )
 
-func home(w http.ResponseWriter, r *http.Request) {
+func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// Use the Header().Add() method to add a 'Server: Go' header to the
 	// response header map. The first parameter is the header name, and
 	// the second parameter is the header value.
@@ -28,8 +27,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 	// of the files slice as variadic arguments.
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		log.Print(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		app.serverError(w, r, err)
 		return
 	}
 
@@ -37,13 +35,12 @@ func home(w http.ResponseWriter, r *http.Request) {
 	// template as the response body.
 	err = ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
-		log.Print(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		app.serverError(w, r, err)
 	}
 }
 
 // Add a snippetView handler function.
-func snippetView(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil || id < 1 {
 		http.NotFound(w, r)
@@ -54,7 +51,7 @@ func snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 // Add a snippetCreate handler function.
-func snippetCreate(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	// Extract the value of the id wildcard from the request using r.PathValue()
 	// and try to convert it to an integer using the strconv.Atoi() function. If
 	// it can't be converted to an integer, or the value is less than 1, we
@@ -75,10 +72,10 @@ func snippetCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 // Add a snippetCreatePost handler function.
-func snippetCreatePost(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Save a new snippet..."))
 }
 
-func downloadHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) downloadHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "./ui/static/file.zip")
 }
