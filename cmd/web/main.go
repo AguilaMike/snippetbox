@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"html/template"
@@ -73,12 +74,17 @@ func main() {
 	formDecoder := form.NewDecoder()
 
 	// Use the scs.New() function to initialize a new session manager. Then we
+	sessionManager := scs.New()
 	// configure it to use our MySQL database as the session store, and set a
+	sessionManager.Store = mysqlstore.New(db)
 	// lifetime of 12 hours (so that sessions automatically expire 12 hours
 	// after first being created).
-	sessionManager := scs.New()
-	sessionManager.Store = mysqlstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
+	// Make sure that the Secure attribute is set on our session cookies.
+	// Setting this means that the cookie will only be sent by a user's web
+	// browser when a HTTPS connection is being used (and won't be sent over an
+	// unsecure HTTP connection).
+	sessionManager.Cookie.Secure = true
 
 	// Initialize a new instance of our application struct, containing the
 	// dependencies (for now, just the structured logger).
@@ -91,6 +97,33 @@ func main() {
 		sessionManager: sessionManager,
 	}
 
+	// Initialize a tls.Config struct to hold the non-default TLS settings we
+	// want the server to use. In this case the only thing that we're changing
+	// is the curve preferences value, so that only elliptic curves with
+	// assembly implementations are used.
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
+
+	// Initialize a new http.Server struct. We set the Addr and Handler fields so
+	// that the server uses the same network address and routes as before.
+	srv := &http.Server{
+		Addr:    *addr,
+		Handler: app.routes(),
+		// Create a *log.Logger from our structured logger handler, which writes
+		// log entries at Error level, and assign it to the ErrorLog field. If
+		// you would prefer to log the server errors at Warn level instead, you
+		// could pass slog.LevelWarn as the final parameter.
+		ErrorLog: slog.NewLogLogger(logger.Handler(), slog.LevelError),
+		// Set the server's TLSConfig field to use the tlsConfig variable we just
+		// created.
+		TLSConfig: tlsConfig,
+		// Add Idle, Read and Write timeouts to the server.
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+
 	// The value returned from the flag.String() function is a pointer to the flag
 	// value, not the value itself. So in this code, that means the addr variable
 	// is actually a pointer, and we need to dereference it (i.e. prefix it with
@@ -99,11 +132,16 @@ func main() {
 	// log.Printf("starting server on %s", *addr)
 	// Use the Info() method to log the starting server message at Info severity
 	// (along with the listen address as an attribute).
-	logger.Info("starting server", "addr", *addr)
+	logger.Info("starting server", "addr", srv.Addr)
 
-	// And we pass the dereferenced addr pointer to http.ListenAndServe() too.
-	err = http.ListenAndServe(*addr, app.routes())
-	//log.Fatal(err)
+	// Call the ListenAndServe() method on our new http.Server struct to start
+	// the server.
+	// Use the ListenAndServeTLS() method to start the HTTPS server. We
+	// pass in the paths to the TLS certificate and corresponding private key as
+	// the two parameters.
+	// go run "/C/Program Files/Go/src/crypto/tls/generate_cert.go" --rsa-bits=2048 --host=localhost
+	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
+
 	// And we also use the Error() method to log any error message returned by
 	// http.ListenAndServe() at Error severity (with no additional attributes),
 	// and then call os.Exit(1) to terminate the application with exit code 1.
