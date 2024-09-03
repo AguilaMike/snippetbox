@@ -3,7 +3,9 @@ package main
 import "net/http"
 
 // The routes() method returns a servemux containing our application routes.
-func (app *application) routes() *http.ServeMux {
+// Update the signature for the routes() method so that it returns a
+// http.Handler instead of *http.ServeMux.
+func (app *application) routes() http.Handler {
 	// Register the two new handler functions and corresponding route patterns with
 	// the servemux, in exactly the same way that we did before.
 	mux := http.NewServeMux()
@@ -26,5 +28,10 @@ func (app *application) routes() *http.ServeMux {
 	// Create the new route, which is restricted to POST requests only.
 	mux.HandleFunc("POST /snippet/create", app.snippetCreatePost)
 
-	return mux
+	// Pass the servemux as the 'next' parameter to the commonHeaders middleware.
+	// Because commonHeaders is just a function, and the function returns a
+	// http.Handler we don't need to do anything else.
+	// Wrap the existing chain with the logRequest middleware.
+	// Wrap the existing chain with the recoverPanic middleware.
+	return app.recoverPanic(app.logRequest(commonHeaders(mux)))
 }
