@@ -25,6 +25,7 @@ import (
 type application struct {
 	logger         *slog.Logger
 	snippets       *models.SnippetModel
+	users          *models.UserModel
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
@@ -85,6 +86,7 @@ func main() {
 	// browser when a HTTPS connection is being used (and won't be sent over an
 	// unsecure HTTP connection).
 	sessionManager.Cookie.Secure = true
+	sessionManager.Cookie.SameSite = http.SameSiteLaxMode
 
 	// Initialize a new instance of our application struct, containing the
 	// dependencies (for now, just the structured logger).
@@ -92,6 +94,7 @@ func main() {
 	app := &application{
 		logger:         logger,
 		snippets:       &models.SnippetModel{DB: db},
+		users:          &models.UserModel{DB: db},
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
