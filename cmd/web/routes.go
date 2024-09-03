@@ -23,14 +23,24 @@ func (app *application) routes() http.Handler {
 	// "/static" prefix before the request reaches the file server.
 	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
 
+	// Create a new middleware chain containing the middleware specific to our
+	// dynamic application routes. For now, this chain will only contain the
+	// LoadAndSave session middleware but we'll add more to it later.
+	dynamic := alice.New(app.sessionManager.LoadAndSave)
+
+	// Update these routes to use the new dynamic middleware chain followed by
+	// the appropriate handler function. Note that because the alice ThenFunc()
+	// method returns a http.Handler (rather than a http.HandlerFunc) we also
+	// need to switch to registering the route using the mux.Handle() method.
+
 	// Prefix the route patterns with the required HTTP method (for now, we will
 	// restrict all three routes to acting on GET requests).
-	mux.HandleFunc("GET /{$}", app.home) // Restrict this route to exact matches on / only.
-	mux.HandleFunc("GET /snippet/view/{id}", app.snippetView)
-	mux.HandleFunc("GET /snippet/create", app.snippetCreate)
+	mux.Handle("GET /{$}", dynamic.ThenFunc(app.home)) // Restrict this route to exact matches on / only.
+	mux.Handle("GET /snippet/view/{id}", dynamic.ThenFunc(app.snippetView))
+	mux.Handle("GET /snippet/create", dynamic.ThenFunc(app.snippetCreate))
 
 	// Create the new route, which is restricted to POST requests only.
-	mux.HandleFunc("POST /snippet/create", app.snippetCreatePost)
+	mux.Handle("POST /snippet/create", dynamic.ThenFunc(app.snippetCreatePost))
 
 	// Create a middleware chain containing our 'standard' middleware
 	// which will be used for every request our application receives.
