@@ -8,17 +8,21 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/AguilaMike/snippetbox/internal/models"
+	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
+
+	"github.com/AguilaMike/snippetbox/internal/models"
 )
 
 // Define an application struct to hold the application-wide dependencies for the
 // web application. For now we'll only include the structured logger, but we'll
 // add more to this as the build progresses.
+// Add a formDecoder field to hold a pointer to a form.Decoder instance.
 type application struct {
 	logger        *slog.Logger
 	snippets      *models.SnippetModel
 	templateCache map[string]*template.Template
+	formDecoder   *form.Decoder
 }
 
 func main() {
@@ -61,12 +65,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initialize a decoder instance...
+	formDecoder := form.NewDecoder()
+
 	// Initialize a new instance of our application struct, containing the
 	// dependencies (for now, just the structured logger).
+	// And add it to the application dependencies.
 	app := &application{
 		logger:        logger,
 		snippets:      &models.SnippetModel{DB: db},
 		templateCache: templateCache,
+		formDecoder:   formDecoder,
 	}
 
 	// The value returned from the flag.String() function is a pointer to the flag
