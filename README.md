@@ -16,23 +16,32 @@ Automating build and deployment step
 - [Snipetbox for the book let's go book](#snipetbox-for-the-book-lets-go-book)
   - [Content table](#content-table)
   - [Installation](#installation)
-    - [Use](#use)
-    - [Project structure](#project-structure)
-    - [Prerequisites](#prerequisites)
-    - [Contribute](#contribute)
+    - [Install dependencies](#install-dependencies)
+    - [Install database](#install-database)
+    - [Create tables](#create-tables)
+    - [Create certificates](#create-certificates)
+  - [Use](#use)
+  - [Project structure](#project-structure)
+  - [Prerequisites](#prerequisites)
+  - [Contribute](#contribute)
 
 ## Installation
 
+### Install dependencies
 You must install all dependencies with this command to install the code on your local machine.
-```
+``` go
 go mod tidy
 ```
+
+### Install database
 Before running the project, you must create a MySQL database with docker.
-```
+``` docker
 docker run --name MySQL -e MYSQL_ROOT_PASSWORD=@dmin1234 -e MYSQL_DATABASE=snippetbox -p 3306:3306 -d mysql:latest
 ```
+
+### Create tables
 Creating the tables and data examples in your database would be best.
-```
+``` sql
 -- Create a new UTF-8 `snippetbox` database.
 CREATE DATABASE snippetbox CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -95,13 +104,15 @@ CREATE TABLE users (
 ALTER TABLE users ADD CONSTRAINT users_uc_email UNIQUE (email);
 
 ```
+
+### Create certificates
 You need to create certificates to run in HTTPS the project and create the path tls
-```
+``` go
 cd tls
 go run "/C/Program Files/Go/src/crypto/tls/generate_cert.go" --rsa-bits=2048 --host=localhost
 ```
 
-### Use
+## Use
 Well, we are done installing everything. We must execute the following command to run the project.
 ```
 go run ./cmd/web
@@ -111,9 +122,26 @@ You can send application parameters if you need to configure other parameters.
 - dsn: MySQL data source (-dsn user:pass@localhost:1234/snippetbox?parseTime=true)
 - debug: To enable debug mode.
 
-### Project structure
+## Project structure
 
+```
 .
+├── cmd
+│   └── web
+│       └── main.go        # Punto de entrada de la aplicación
+├── internal
+│   ├── handlers
+│   │   └── handlers.go    # Manejadores de las rutas
+│   ├── models
+│   │   └── models.go      # Definición de los modelos de datos
+│   └── templates
+│       └── templates.go   # Gestión de plantillas
+├── pkg
+│   └── utils
+│       └── utils.go       # Funciones utilitarias
+├── go.mod                 # Archivo de módulos de Go
+├── go.sum                 # Suma de verificación de dependencias
+└── README.md              # Este archivo
 ├── cmd
 │   └── web
 │       ├── context.go
@@ -161,13 +189,14 @@ You can send application parameters if you need to configure other parameters.
 ├── go.mod
 ├── go.sum
 └── README.md
+```
 
-### Prerequisites
+## Prerequisites
 
 - [Go](https://golang.org/doc/install) (version 1.23 o lastest)
 
 
-### Contribute
+## Contribute
 
 - Fork the project
 - Create a branch for your feature (git checkout -b feature/new-feature)
