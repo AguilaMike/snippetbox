@@ -24,11 +24,12 @@ import (
 // Add a formDecoder field to hold a pointer to a form.Decoder instance.
 type application struct {
 	logger         *slog.Logger
-	snippets       *models.SnippetModel
-	users          *models.UserModel
+	snippets       models.SnippetModelInterface // Use our new interface type.
+	users          models.UserModelInterface    // Use our new interface type.
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
+	debugMode      bool
 }
 
 func main() {
@@ -39,6 +40,8 @@ func main() {
 
 	// Define a new command-line flag for the MySQL DSN string.
 	dsn := flag.String("dsn", "root:@dmin1234@/snippetbox?parseTime=true", "MySQL data source name")
+
+	debug := flag.Bool("debug", false, "Enable debug mode")
 
 	// Importantly, we use the flag.Parse() function to parse the command-line flag.
 	// This reads in the command-line flag value and assigns it to the addr
@@ -98,6 +101,7 @@ func main() {
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
+		debugMode:      *debug,
 	}
 
 	// Initialize a tls.Config struct to hold the non-default TLS settings we

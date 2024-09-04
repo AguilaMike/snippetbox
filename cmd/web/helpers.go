@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 	"time"
 
 	"github.com/go-playground/form/v4"
@@ -20,11 +21,17 @@ func (app *application) serverError(w http.ResponseWriter, r *http.Request, err 
 		uri    = r.URL.RequestURI()
 		// Use debug.Stack() to get the stack trace. This returns a byte slice, which
 		// we need to convert to a string so that it's readable in the log entry.
-		//trace = string(debug.Stack())
+		trace = string(debug.Stack())
 	)
 
-	//app.logger.Error(err.Error(), "method", method, "uri", uri, "trace", trace)
 	app.logger.Error(err.Error(), "method", method, "uri", uri)
+
+	if app.debugMode {
+		body := fmt.Sprintf("%s\n\n%s", err, trace)
+		http.Error(w, body, http.StatusInternalServerError)
+		return
+	}
+
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 

@@ -10,7 +10,8 @@
             "request": "launch",
             "mode": "auto",
             "program": "./cmd/web",
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
+            "args": ["-debug"]
         }
     ]
 }

@@ -26,6 +26,9 @@ func (app *application) routes() http.Handler {
 	// file will be served (so long as it exists).
 	mux.Handle("GET /static/", http.FileServerFS(ui.Files))
 
+	// Add a new GET /ping route.
+	mux.HandleFunc("GET /ping", ping)
+
 	// Create a new middleware chain containing the middleware specific to our
 	// dynamic application routes. For now, this chain will only contain the
 	// LoadAndSave session middleware but we'll add more to it later.
@@ -56,6 +59,11 @@ func (app *application) routes() http.Handler {
 	mux.Handle("GET /user/login", dynamic.ThenFunc(app.userLogin))
 	mux.Handle("POST /user/login", dynamic.ThenFunc(app.userLoginPost))
 	mux.Handle("POST /user/logout", protected.ThenFunc(app.userLogoutPost))
+
+	mux.Handle("GET /about", dynamic.ThenFunc(app.about))
+	mux.Handle("GET /account/view", protected.ThenFunc(app.accountView))
+	mux.Handle("GET /account/password/update", protected.ThenFunc(app.accountPasswordUpdate))
+	mux.Handle("POST /account/password/update", protected.ThenFunc(app.accountPasswordUpdatePost))
 
 	// Create a middleware chain containing our 'standard' middleware
 	// which will be used for every request our application receives.
